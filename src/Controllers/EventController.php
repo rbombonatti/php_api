@@ -6,14 +6,17 @@ use App\Models\BalanceModel;
 use App\Utils\Response;
 use App\Utils\Validator;
 
-class EventController {
+class EventController 
+{
     private $balanceModel;
 
-    public function __construct() {
+    public function __construct() 
+    {
         $this->balanceModel = new BalanceModel();
     }
 
-    public function handleEvent() {
+    public function handleEvent() 
+    {
         $input = json_decode(file_get_contents('php://input'), true);
 
         $typeValidation = Validator::validateEventType($input, 'type');
@@ -53,4 +56,4 @@ class EventController {
         Response::json(['balance' => $balance]);
     }
 }
-?>
+
