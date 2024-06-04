@@ -59,6 +59,15 @@ class EventController
                 $balance = $this->accountModel->getBalance($destinationId);
                 $balance += $input['amount'];
                 $this->accountModel->updateBalance($destinationId, $balance);
+                Response::json( 
+                    [
+                    "destination" => 
+                        [
+                            "id" => $destinationId, 
+                            "balance" => $balance
+                        ]
+                    ], 201);
+                return;
                 break;
 
             case AccountModel::EVENT_WITHDRAW:
@@ -73,7 +82,7 @@ class EventController
                 }
                 $balance -= $input['amount'];
                 $this->accountModel->updateBalance($originId, $balance);
-                Response::json(["origin", ["id" => $originId, "balance" => $balance]], 201);
+                Response::json(["origin" => ["id" => $originId, "balance" => $balance]], 201);
                 return;
                 break;
 
@@ -105,19 +114,13 @@ class EventController
                 $this->accountModel->updateBalance($destinationId, $destionationBalance);
                 Response::json(
                     [
-                        [
-                            "origin" => 
-                                [
-                                    "id" => $originId, 
-                                    "balance" => $originBalance
-                                ]
-                        ], 
-                        [
-                            "destination" => 
-                                [
-                                    "id" => $destinationId, 
-                                    "balance" => $destionationBalance
-                                ]
+                        "origin" => [
+                            "id" => $originId, 
+                            "balance" => $originBalance
+                        ],
+                        "destination" => [
+                            "id" => $destinationId, 
+                            "balance" => $destionationBalance
                         ]
                     ], 201);
                 return;
@@ -128,8 +131,6 @@ class EventController
                 return;
         }
 
-       
-        Response::json(['balance' => $balance]);
     }
 }
 

@@ -7,7 +7,11 @@ class Response
     public static function json($data, $statusCode = 200) 
     {
         http_response_code($statusCode);
-        header('Content-Type: application/json');
-        echo json_encode($data);
+        if ($statusCode === 200 && empty($data)) {
+            echo "OK";
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode($data);
+        }
     }
 }
