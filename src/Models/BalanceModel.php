@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-class BalanceModel {
+class BalanceModel 
+{
 
     const EVENT_DEPOSIT = 'deposit';
     const EVENT_WITHDRAW = 'withdraw';
@@ -13,14 +14,15 @@ class BalanceModel {
 
     private $filePath = __DIR__ . '/../../data/balance.json';
 
-    public function getBalance() {
+    public function getBalance() 
+    {
         $data = json_decode(file_get_contents($this->filePath), true);
         return isset($data['balance']) ? $data['balance'] : 0;
     }
 
-    public function updateBalance($balance) {
+    public function updateBalance($balance) 
+    {
         $data = ['balance' => $balance];
         file_put_contents($this->filePath, json_encode($data));
     }
 }
-?>

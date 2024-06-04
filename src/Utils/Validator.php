@@ -4,9 +4,11 @@ namespace App\Utils;
 
 use App\Models\BalanceModel;
 
-class Validator {
+class Validator 
+{
 
-    public static function validateEventType($input, $fieldName) {
+    public static function validateEventType($input, $fieldName) 
+    {
         if (! isset($input[$fieldName])) {
             return ['valid' => false, 'message' => "$fieldName is required."];
         }
@@ -18,7 +20,8 @@ class Validator {
         return ['valid' => true, 'message' => ''];
     }
 
-    public static function validateNumericInput($input, $fieldName) {
+    public static function validateNumericInput($input, $fieldName) 
+    {
         if (! isset($input[$fieldName])) {
             return ['valid' => false, 'message' => "$fieldName is required."];
         }
@@ -34,4 +37,3 @@ class Validator {
         return ['valid' => true, 'message' => ''];
     }
 }
-?>
