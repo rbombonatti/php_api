@@ -2,17 +2,24 @@
 
 namespace App\Controllers;
 
-use App\Models\AccountModel;
 use App\Utils\Response;
 use App\Utils\Validator;
+use App\Services\DepositServices;
+use App\Services\WithdrawServices;
+use App\Services\TransferServices;
+use App\Models\AccountModel;
 
 class EventController 
 {
-    private $accountModel;
+    private $depositServices;
+    private $withdrawServices;
+    private $transferServices;
 
     public function __construct() 
     {
-        $this->accountModel = new AccountModel();
+        $this->depositServices = new DepositServices();
+        $this->withdrawServices = new WithdrawServices();
+        $this->transferServices = new TransferServices();
     }
 
     public function handleEvent() 
@@ -21,6 +28,16 @@ class EventController
 
         $typeValidation = Validator::validateEventType($input, 'type');
         $amountValidation = Validator::validateNumericInput($input, 'amount');
+
+        if (!$typeValidation['valid']) {
+            Response::json(['error' => $typeValidation['message']], 400);
+            return;
+        }
+        
+        if (!$amountValidation['valid']) {
+            Response::json(['error' => $amountValidation['message']], 400);
+            return;
+        }
 
         if (in_array($input['type'],  [AccountModel::EVENT_DEPOSIT, AccountModel::EVENT_WITHDRAW])) {
             $accountValidation = Validator::validateAccountId($input, 'destination');
@@ -33,103 +50,32 @@ class EventController
             $destinationId = $input['destination'];
         }
 
-        if (!$typeValidation['valid']) {
-            Response::json(['error' => $typeValidation['message']], 400);
-            return;
-        }
-
-        if (!$amountValidation['valid']) {
-            Response::json(['error' => $amountValidation['message']], 400);
-            return;
-        }
-
         if (!$accountValidation['valid']) {
             Response::json(['error' => $accountValidation['message']], 400);
             return;
         }
 
-
         switch ($input['type']) {
             case AccountModel::EVENT_DEPOSIT:
-                if (!$this->accountModel->accountExists($destinationId)) {
-                    $newAccount = $this->accountModel->createAccount($destinationId, $input['amount']);
-                    Response::json(['destination' => $newAccount], 201);
-                    return;
-                }
-                $balance = $this->accountModel->getBalance($destinationId);
-                $balance += $input['amount'];
-                $this->accountModel->updateBalance($destinationId, $balance);
-                Response::json( 
-                    [
-                    "destination" => 
-                        [
-                            "id" => $destinationId, 
-                            "balance" => $balance
-                        ]
-                    ], 201);
-                return;
-                break;
+                $response = $this->depositServices->deposit($destinationId, $input['amount']);
+            break;
 
             case AccountModel::EVENT_WITHDRAW:
-                if (!$this->accountModel->accountExists($originId)) {
-                    Response::json(0, 404);
-                    return;
-                }
-                $balance = $this->accountModel->getBalance($originId);
-                if ($balance < $input['amount']) {
-                    Response::json(['error' => 'Insufficient funds'], 400);
-                    return;
-                }
-                $balance -= $input['amount'];
-                $this->accountModel->updateBalance($originId, $balance);
-                Response::json(["origin" => ["id" => $originId, "balance" => $balance]], 201);
-                return;
-                break;
+                $response = $this->withdrawServices->withdraw($originId, $input['amount']);
+            break;
 
             case AccountModel::EVENT_TRANSFER:
-                if (!$this->accountModel->accountExists($originId)) {
-                    Response::json(0, 404);
-                    return;
-                }
-
-                $originBalance = $this->accountModel->getBalance($originId);
-
-                if ($originBalance < $input['amount']) {
-                    Response::json('Insufficient funds', 404);
-                    return;
-                }
-
-                if (!$this->accountModel->accountExists($destinationId)) {
-                    $newAccount = $this->accountModel->createAccount($destinationId, 0);
-                    $destinationId = $newAccount['id'];
-                }
-
-
-                $destionationBalance = $this->accountModel->getBalance($destinationId);
-
-                $originBalance -= $input['amount'];
-                $destionationBalance += $input['amount'];
-
-                $this->accountModel->updateBalance($originId, $originBalance);
-                $this->accountModel->updateBalance($destinationId, $destionationBalance);
-                Response::json(
-                    [
-                        "origin" => [
-                            "id" => $originId, 
-                            "balance" => $originBalance
-                        ],
-                        "destination" => [
-                            "id" => $destinationId, 
-                            "balance" => $destionationBalance
-                        ]
-                    ], 201);
-                return;
+                $response = $this->transferServices->transfer($originId, $destinationId, $input['amount']);
                 break;
 
             default:
-                Response::json(['error' => 'Invalid event type'], 400);
-                return;
+                $response = [
+                    'msg' => 'Invalid event type',
+                    'statusCode' => 400
+                ];
         }
+
+        return Response::json($response);
 
     }
 }

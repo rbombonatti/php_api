@@ -20,7 +20,11 @@ class ResetController
         $input = json_decode(file_get_contents('php://input'), true);
 
         $this->accountModel->resetAllAccounts();
-        Response::json('');
+        $response = [
+            'msg' => '',
+            'statusCode' => 200
+        ];
+        Response::json($response);
     }
 }
 

@@ -18,11 +18,14 @@ class BalanceController
     {
         
         if (!$this->accountModel->accountExists($accountId)) {
-            Response::json(0, 404);
-            return;
+            $response = [
+                'msg' => '0',
+                'statusCode' => 404                
+            ];
+            
         }
 
-        $balance = $this->accountModel->getBalance($accountId);
-        Response::json($balance);
+        $response['msg'] = $this->accountModel->getBalance($accountId);
+        Response::json($response);
     }
 }
