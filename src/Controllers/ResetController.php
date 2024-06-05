@@ -2,29 +2,22 @@
 
 namespace App\Controllers;
 
-use App\Models\AccountModel;
+use App\Services\ResetServices;
 use App\Utils\Response;
-use App\Utils\Validator;
 
 class ResetController 
 {
-    private $accountModel;
+    private $resetServices;
 
     public function __construct() 
     {
-        $this->accountModel = new AccountModel();
+        $this->resetServices = new ResetServices();
     }
 
     public function reset() 
     {
-        $input = json_decode(file_get_contents('php://input'), true);
-
-        $this->accountModel->resetAllAccounts();
-        $response = [
-            'msg' => '',
-            'statusCode' => 200
-        ];
-        Response::json($response);
+        $response = $this->resetServices->reset();
+        Response::textHtml($response);
     }
 }
 

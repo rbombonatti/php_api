@@ -2,30 +2,21 @@
 
 namespace App\Controllers;
 
-use App\Models\AccountModel;
+use App\Services\BalanceServices;
 use App\Utils\Response;
 
 class BalanceController 
 {
-    private $accountModel;
+    private $balanceServices;
 
     public function __construct() 
     {
-        $this->accountModel = new AccountModel();
+        $this->balanceServices = new BalanceServices();
     }
 
     public function getBalance($accountId) 
     {
-        
-        if (!$this->accountModel->accountExists($accountId)) {
-            $response = [
-                'msg' => '0',
-                'statusCode' => 404                
-            ];
-            
-        }
-
-        $response['msg'] = $this->accountModel->getBalance($accountId);
-        Response::json($response);
+        $response = $this->balanceServices->getBalance($accountId);
+        Response::textHtml($response);
     }
 }

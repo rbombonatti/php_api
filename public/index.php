@@ -5,22 +5,43 @@ require_once __DIR__ . '/../autoload.php';
 use App\Controllers\BalanceController;
 use App\Controllers\EventController;
 use App\Controllers\ResetController;
+use App\Utils\Response;
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
+$notFound = false;
 
-if ($uri === '/balance' && $method === 'GET') {
-    (new BalanceController())->getBalance($_GET['account_id']);
+if ($method === 'GET') {
+    switch ($uri) {
+        case '/balance':
+            (new BalanceController())->getBalance($_GET['account_id']);
+            break;
 
-} elseif ($uri === '/event' && $method === 'POST') {
-    (new EventController())->handleEvent();
-
-} elseif ($uri === '/reset' && $method === 'POST') {
-    (new ResetController())->reset();
-
-} else {
-    header('Content-Type: application/json');
-    http_response_code(404);
-    echo json_encode(['error' => 'Endpoint not found']);
+        default:
+            $notFound = true;
+            break;
+    }
 }
 
+if ($method === 'POST') {
+    switch ($uri) {
+        case '/event':
+            (new EventController())->handleEvent();
+            break;
+
+        case '/reset':
+            (new ResetController())->reset();
+            break;
+
+        default:
+            $notFound = true;
+            break;
+    }
+}
+
+if ($notFound) {
+    Response::json([
+        'msg' => 'Endpoint not found',
+        'statusCode' => 404
+    ]);
+}
