@@ -2,17 +2,24 @@
 
 namespace App\Controllers;
 
-use App\Models\BalanceModel;
 use App\Utils\Response;
 use App\Utils\Validator;
+use App\Services\DepositServices;
+use App\Services\WithdrawServices;
+use App\Services\TransferServices;
+use App\Models\AccountModel;
 
 class EventController 
 {
-    private $balanceModel;
+    private $depositServices;
+    private $withdrawServices;
+    private $transferServices;
 
     public function __construct() 
     {
-        $this->balanceModel = new BalanceModel();
+        $this->depositServices = new DepositServices();
+        $this->withdrawServices = new WithdrawServices();
+        $this->transferServices = new TransferServices();
     }
 
     public function handleEvent() 
@@ -26,34 +33,50 @@ class EventController
             Response::json(['error' => $typeValidation['message']], 400);
             return;
         }
-
+        
         if (!$amountValidation['valid']) {
             Response::json(['error' => $amountValidation['message']], 400);
             return;
         }
 
-        $balance = $this->balanceModel->getBalance();
+        if (in_array($input['type'],  [AccountModel::EVENT_DEPOSIT, AccountModel::EVENT_WITHDRAW])) {
+            $accountValidation = Validator::validateAccountId($input, 'destination');
+            $destinationId = $input['destination'];
+        }
+
+        if (in_array($input['type'],  [AccountModel::EVENT_TRANSFER, AccountModel::EVENT_WITHDRAW])) {
+            $accountValidation = Validator::validateAccountId($input, 'origin');
+            $originId = $input['origin'];
+            $destinationId = $input['destination'];
+        }
+
+        if (!$accountValidation['valid']) {
+            Response::json(['error' => $accountValidation['message']], 400);
+            return;
+        }
 
         switch ($input['type']) {
-            case BalanceModel::EVENT_DEPOSIT:
-                $balance += $input['amount'];
-                break;
+            case AccountModel::EVENT_DEPOSIT:
+                $response = $this->depositServices->deposit($destinationId, $input['amount']);
+            break;
 
-            case BalanceModel::EVENT_WITHDRAW:
-                if ($balance < $input['amount']) {
-                    Response::json(['error' => 'Insufficient funds'], 400);
-                    return;
-                }
-                $balance -= $input['amount'];
+            case AccountModel::EVENT_WITHDRAW:
+                $response = $this->withdrawServices->withdraw($originId, $input['amount']);
+            break;
+
+            case AccountModel::EVENT_TRANSFER:
+                $response = $this->transferServices->transfer($originId, $destinationId, $input['amount']);
                 break;
 
             default:
-                Response::json(['error' => 'Invalid event type'], 400);
-                return;
+                $response = [
+                    'msg' => 'Invalid event type',
+                    'statusCode' => 400
+                ];
         }
 
-        $this->balanceModel->updateBalance($balance);
-        Response::json(['balance' => $balance]);
+        return Response::json($response);
+
     }
 }
 
